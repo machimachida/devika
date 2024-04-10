@@ -21,7 +21,7 @@ from src.browser.search import BingSearch, GoogleSearch, DuckDuckGoSearch
 from src.browser import Browser
 from src.browser import start_interaction
 from src.filesystem import ReadCode
-from src.services import Netlify
+from src.services import Netlify, Git
 from src.documenter.pdf import PDF
 
 import json
@@ -48,6 +48,7 @@ class Agent:
         """
         Agents
         """
+        self.base_model = base_model
         self.planner = Planner(base_model=base_model)
         self.researcher = Researcher(base_model=base_model)
         self.formatter = Formatter(base_model=base_model)
@@ -60,6 +61,7 @@ class Agent:
         self.patcher = Patcher(base_model=base_model)
         self.reporter = Reporter(base_model=base_model)
         self.decision = Decision(base_model=base_model)
+        self.git = None
 
         self.project_manager = ProjectManager()
         self.agent_state = AgentState()
@@ -260,6 +262,26 @@ class Agent:
             #asyncio.run(self.open_page(project_name, pdf_download_url))
 
             self.project_manager.add_message_from_devika(project_name, response)
+
+        elif action == "repo_init":
+            project_path = self.project_manager.get_project_path(project_name)
+            if self.git == None:
+                self.git = Git(project_path, self.base_model)
+
+        elif action == "repo_commit":
+            project_path = self.project_manager.get_project_path(project_name)
+            if self.git == None:
+                self.git = Git(project_path, self.base_model)
+
+            commit_message = self.git.generate_commit_message(project_name, conversation,code_markdown)
+            self.git.commit(commit_message)
+
+        elif action == "reset_code":
+            project_path = self.project_manager.get_project_path(project_name)
+            if self.git == None:
+                self.git = Git(project_path, self.base_model)
+                
+            self.git.reset_to_previous_commit()
 
         self.agent_state.set_agent_active(project_name, False)
         self.agent_state.set_agent_completed(project_name, True)
