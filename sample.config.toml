@@ -22,6 +22,7 @@ AZURE_OPENAI = "<YOUR_AZUREAI_API_KEY>"
 BING = "https://api.bing.microsoft.com/v7.0/search"
 GOOGLE = "https://www.googleapis.com/customsearch/v1"
 OLLAMA = "http://127.0.0.1:11434"
+OPENAI = "https://api.openai.com"
 AZURE_OPENAI = "<YOUR_AZUREAI_ENDPOINT>"
 
 [DEPLOYMENT_NAME]
