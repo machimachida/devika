@@ -99,15 +99,9 @@ class Runner:
         retries = 0
         
         for command in commands:
-            command_set = command.split(" ")
             command_failed = False
-            
-            process = subprocess.run(
-                command_set,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                cwd=project_path
-            )
+
+            process = self.__run_command(command, project_path)
             command_output = process.stdout.decode('utf-8')
             command_failed = process.returncode != 0
             
@@ -159,15 +153,8 @@ class Runner:
                     
                     ProjectManager().add_message_from_devika(project_name, response)
                     
-                    command_set = command.split(" ")
                     command_failed = False
-                    
-                    process = subprocess.run(
-                        command_set,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        cwd=project_path
-                    )
+                    process = self.__run_command(command, project_path)
                     command_output = process.stdout.decode('utf-8')
                     command_failed = process.returncode != 0
                     
@@ -199,15 +186,8 @@ class Runner:
                     
                     Patcher(base_model=self.base_model).save_code_to_project(code, project_name)
                     
-                    command_set = command.split(" ")
                     command_failed = False
-                    
-                    process = subprocess.run(
-                        command_set,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        cwd=project_path
-                    )
+                    process = self.__run_command(command, project_path)
                     command_output = process.stdout.decode('utf-8')
                     command_failed = process.returncode != 0
                     
@@ -254,3 +234,19 @@ class Runner:
         )
 
         return valid_response
+
+    @staticmethod
+    def __run_command(command: str, project_path: str) -> subprocess.CompletedProcess:
+        command_set = command.split(" ")
+        # コマンドがgradleから始まる場合は、windowsだとgradle.batを使う
+        if os.name == "nt" and command_set[0].startswith("gradle"):
+            command_set[0] = "gradle.bat"
+
+        process = subprocess.run(
+            command_set,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=project_path
+        )
+        return process
+
