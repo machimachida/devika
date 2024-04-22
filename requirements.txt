@@ -10,6 +10,9 @@ mistletoe
 markdownify
 pdfminer.six
 playwright
+pytest
+pytest-cov
+pytest-mock
 pytest-playwright
 tiktoken
 ollama
