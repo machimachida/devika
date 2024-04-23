@@ -9,7 +9,9 @@ def test_extract():
     public class TestClass {
         private int number;
         public void testMethod(String param) {
-            System.out.println(param);
+            List<String> list = new ArrayList<>();
+            list.add(param);
+            System.out.println(list);
         }
     }
     """
@@ -67,6 +69,9 @@ def test_extract2():
     import org.terasoluna.tourreservation.domain.repository.tourinfo.TourInfoRepository;
     import org.terasoluna.tourreservation.domain.repository.tourinfo.TourInfoSearchCriteria;
 
+    /**
+    * Service for search tour information.
+    */
     @Service
     @Transactional
     public class TourInfoServiceImpl implements TourInfoService {
