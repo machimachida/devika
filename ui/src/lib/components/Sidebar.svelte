@@ -20,6 +20,7 @@
       route: "/logs",
     },
   ];
+  console.log($page.url)
 </script>
 
 <div
