@@ -5,12 +5,62 @@ from .grammer.JavaParserListener import JavaParserListener
 
 
 class JavaExtractor:
-    def extract(self, file_content: str, methods: list[str]) -> dict: # dict[str, str]:
+    def extract(self, file_content: str, methods: list[str]) -> str:  # dict[str, str]:
         parser = JavaParser(CommonTokenStream(JavaLexer(InputStream(file_content))))
         walker = ParseTreeWalker()
-        basic_info_listener = BasicInfoListener()
-        walker.walk(basic_info_listener, parser.compilationUnit())
-        return basic_info_listener.ast_info
+        listener = Listener()
+        walker.walk(listener, parser.compilationUnit())
+        return listener.to_string()
+
+
+class Listener(JavaParserListener):
+    def __init__(self):
+        self.contents: dict[int, str] = {}
+
+    def to_string(self) -> str:
+        """
+        self.contentsの内容をキーの昇順に並べ替え、文字列として結合する。
+        """
+        return "".join([self.contents[key] for key in sorted(self.contents.keys())])
+
+    def enterPackageDeclaration(self, ctx: JavaParser.PackageDeclarationContext):
+        child_count = int(ctx.getChildCount())
+        package_line = ''
+        for i in range(child_count):
+            if i == child_count - 1:  # 最後のgetText()で得られる文字列は';'なので、その後ろに改行を追加する
+                package_line += ctx.getChild(i).getText() + '\n\n'
+                continue
+            if i != 0:
+                package_line += ' '
+            package_line += ctx.getChild(i).getText()
+
+        self.contents[ctx.start.line] = package_line
+
+    def enterImportDeclaration(self, ctx: JavaParser.ImportDeclarationContext):
+        child_count = int(ctx.getChildCount())
+        import_line = ''
+        for i in range(child_count):
+            if i == child_count - 1:  # 最後のgetText()で得られる文字列は';'なので、その後ろに改行を追加する
+                import_line += ctx.getChild(i).getText() + '\n'
+                continue
+            if i != 0:
+                import_line += ' '
+            import_line += ctx.getChild(i).getText()
+
+        self.contents[ctx.start.line] = import_line
+
+    def enterClassDeclaration(self, ctx: JavaParser.ClassDeclarationContext):
+        class_lines = ''
+        # get Annotation and AccessModifier
+        parent = ctx.parentCtx
+        parent_child_count = parent.getChildCount()
+        for i in range(parent_child_count):  # 最後のchildはクラスなので、ここでは含めない
+            if parent.getChild(i) == ctx:
+                class_line = parent.getChild(i - 1).getText() + ' ' + ctx.getText() + ' {\n'
+                self.contents[ctx.start.line] = class_line
+
+        class_line = ctx.getText() + ' {\n'
+        self.contents[ctx.start.line] = class_line
 
 
 class BasicInfoListener(JavaParserListener):
@@ -25,6 +75,12 @@ class BasicInfoListener(JavaParserListener):
             'fields': [],
             'methods': []
         }
+
+    def enterClassOrInterfaceModifier(self, ctx:JavaParser.CompilationUnitContext):
+        print("a")
+
+    def exitClassOrInterfaceModifier(self, ctx:JavaParser.CompilationUnitContext):
+        print("a")
 
     # ★ポイント５
     # Enter a parse tree produced by JavaParser#packageDeclaration.

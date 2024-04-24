@@ -1,5 +1,6 @@
 from .java_extractor import JavaExtractor
-
+from .java_extractor import Listener
+from .grammer.JavaParser import JavaParser
 
 def test_extract():
     extractor = JavaExtractor()
@@ -102,3 +103,58 @@ def test_extract2():
     }
     ast_info = extractor.extract(file_content, methods)
     assert ast_info == expected_ast_info
+
+class TestListener:
+    def test_extract_java_method(self):
+        file_content = """package com.example.sample;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import lombok.AllArgsConstructor;
+
+@Service
+@AllArgsConstructor
+public class SampleService {
+  private SampleRepository sampleRepository;
+
+  public List<SampleItem> getExistItems(List<Long> ids) {
+    return this.sampleRepository.findByItemIdIn(ids);
+  }
+
+  public boolean existAll(List<Long> ids) {
+    List<CatalogItem> items = this.sampleRepository.findByIdIn(ids);
+    List<Long> notExistIds = ids.stream()
+        .filter(itemId -> !this.existItemIdInItems(items, itemId))
+        .collect(Collectors.toList());
+
+    return notExistIds.isEmpty();
+  }
+
+  private boolean existItemIdInItems(List<SampleItem> items, long id) {
+    return items.stream().anyMatch(item -> item.getId() == id);
+  }
+}
+"""
+        methods = ["getExistItems"]
+        expected = """package com.example.sample;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import lombok.AllArgsConstructor;
+
+@Service
+@AllArgsConstructor
+public class SampleService {
+  private SampleRepository sampleRepository;
+
+  public List<SampleItem> getExistItems(List<Long> ids) {
+    return this.sampleRepository.findByItemIdIn(ids);
+  }
+}
+"""
+
+        extractor = JavaExtractor()
+        actual = extractor.extract(file_content, methods)
+        assert actual == expected
