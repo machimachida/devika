@@ -16,51 +16,80 @@ class JavaExtractor:
 class Listener(JavaParserListener):
     def __init__(self):
         self.contents: dict[int, str] = {}
+        self.internal_methods: list[str] = []
 
     def to_string(self) -> str:
         """
         self.contentsの内容をキーの昇順に並べ替え、文字列として結合する。
         """
-        return "".join([self.contents[key] for key in sorted(self.contents.keys())])
+        return ''.join([self.contents[key] for key in sorted(self.contents.keys())])
 
     def enterPackageDeclaration(self, ctx: JavaParser.PackageDeclarationContext):
-        child_count = int(ctx.getChildCount())
-        package_line = ''
-        for i in range(child_count):
-            if i == child_count - 1:  # 最後のgetText()で得られる文字列は';'なので、その後ろに改行を追加する
-                package_line += ctx.getChild(i).getText() + '\n\n'
-                continue
-            if i != 0:
-                package_line += ' '
-            package_line += ctx.getChild(i).getText()
+        children = list(ctx.getChildren())
+        child_count = len(children)
+
+        package_line = ' '.join(child.getText() for child in children[:child_count-1])
+        # 最後のgetText()で得られる文字列は';'なので、その後ろに改行を追加する
+        package_line += ctx.getChild(child_count - 1).getText() + '\n\n'
 
         self.contents[ctx.start.line] = package_line
 
     def enterImportDeclaration(self, ctx: JavaParser.ImportDeclarationContext):
-        child_count = int(ctx.getChildCount())
-        import_line = ''
-        for i in range(child_count):
-            if i == child_count - 1:  # 最後のgetText()で得られる文字列は';'なので、その後ろに改行を追加する
-                import_line += ctx.getChild(i).getText() + '\n'
-                continue
-            if i != 0:
-                import_line += ' '
-            import_line += ctx.getChild(i).getText()
+        children = list(ctx.getChildren())
+        child_count = len(children)
+
+        import_line = ' '.join(child.getText() for child in children[:child_count-1])
+        # 最後のgetText()で得られる文字列は';'なので、その後ろに改行を追加する
+        import_line += ctx.getChild(child_count - 1).getText() + '\n'
 
         self.contents[ctx.start.line] = import_line
 
-    def enterClassDeclaration(self, ctx: JavaParser.ClassDeclarationContext):
-        class_lines = ''
+    def enterMethodDeclaration(self, ctx: JavaParser.MethodDeclarationContext):
+        method_name = ctx.getChild(1).getText()
+        self.internal_methods.append(method_name)
+
+    def exitClassDeclaration(self, ctx: JavaParser.ClassDeclarationContext):
+        class_lines = '\n'  # classの前に空行を入れる。enterImportDeclarationでimportの終了が検知できないため、このタイミングで空行を入れる
         # get Annotation and AccessModifier
         parent = ctx.parentCtx
         parent_child_count = parent.getChildCount()
-        for i in range(parent_child_count):  # 最後のchildはクラスなので、ここでは含めない
-            if parent.getChild(i) == ctx:
-                class_line = parent.getChild(i - 1).getText() + ' ' + ctx.getText() + ' {\n'
-                self.contents[ctx.start.line] = class_line
+        for i in range(parent_child_count - 1):  # 最後のchildはparentの子要素であるctxなので、ここでは含めない
+            annotation_or_access_modifier = parent.getChild(i).getText()
+            if annotation_or_access_modifier[0] == '@':  # アノテーションの場合
+                class_lines += annotation_or_access_modifier + '\n'
+            else:  # アクセス修飾子の場合
+                class_lines += annotation_or_access_modifier + ' '
 
-        class_line = ctx.getText() + ' {\n'
-        self.contents[ctx.start.line] = class_line
+        # クラスの宣言文を取得する
+        children = list(ctx.getChildren())
+        class_declaration = ' '.join(child.getText() for child in children[:len(children)-1])
+        class_lines += class_declaration + ' '  # 後に続く'{'の前にスペースを入れるため、ここでスペースを入れる
+
+        # クラスの内部の要素を取得する
+        class_internal = ctx.getChild(len(children) - 1)
+        # 最初の要素は'{'、最後の要素は'}'なので、それらを除いた要素を取得する
+        class_internal_children = list(class_internal.getChildren())
+        members = class_internal_children[1:len(class_internal_children)-1]
+
+        members_lines = ''
+        methods: dict[str, JavaParser.MethodDeclarationContext] = {}
+        for member in members:
+            # メンバの最後の要素がアクセス修飾子やアノテーションでない部分
+            main_part = member.getChild(-1)
+            declared_context = main_part.getChild(0)
+
+            if type(declared_context) is JavaParser.MethodDeclarationContext:
+                # メソッドの場合は一旦すべてdictに格納し、後から必要かどうかを判断する
+                for context in list(declared_context.getChildren()):
+                    if type(context) is JavaParser.IdentifierContext:
+                        methods[context.getText()] = declared_context
+            else:
+                # メソッドでない場合はそのまま出力する
+                class_lines += member.getText() + '\n'
+                continue
+
+
+        self.contents[ctx.start.line] = class_lines + '\n'
 
 
 class BasicInfoListener(JavaParserListener):

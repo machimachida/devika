@@ -117,11 +117,13 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class SampleService {
   private SampleRepository sampleRepository;
+  String temp;
 
   public List<SampleItem> getExistItems(List<Long> ids) {
     return this.sampleRepository.findByItemIdIn(ids);
   }
 
+  @Override
   public boolean existAll(List<Long> ids) {
     List<CatalogItem> items = this.sampleRepository.findByIdIn(ids);
     List<Long> notExistIds = ids.stream()
