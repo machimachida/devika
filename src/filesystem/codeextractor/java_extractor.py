@@ -8,15 +8,16 @@ class JavaExtractor:
     def extract(self, file_content: str, methods: list[str]) -> str:  # dict[str, str]:
         parser = JavaParser(CommonTokenStream(JavaLexer(InputStream(file_content))))
         walker = ParseTreeWalker()
-        listener = Listener()
+        listener = Listener(['existAll'])
         walker.walk(listener, parser.compilationUnit())
         return listener.to_string()
 
 
 class Listener(JavaParserListener):
-    def __init__(self):
+    def __init__(self, target_methods: list[str]):
         self.contents: dict[int, str] = {}
         self.internal_methods: list[str] = []
+        self.target_methods: list[str] = target_methods
 
     def to_string(self) -> str:
         """
@@ -73,6 +74,7 @@ class Listener(JavaParserListener):
 
         members_lines = ''
         methods: dict[str, JavaParser.MethodDeclarationContext] = {}
+        extracted_members: dict[int, object] = {}
         for member in members:
             # メンバの最後の要素がアクセス修飾子やアノテーションでない部分
             main_part = member.getChild(-1)
@@ -84,10 +86,31 @@ class Listener(JavaParserListener):
                     if type(context) is JavaParser.IdentifierContext:
                         methods[context.getText()] = declared_context
             else:
-                # メソッドでない場合はそのまま出力する
-                class_lines += member.getText() + '\n'
+                # メソッド以外の場合は一旦extract_membersに格納し、後から一つの文字列にまとめる
+                extracted_members[member.start.line] = member
+
+        # 必要なメソッドのみ抽出する
+        for target_method in self.target_methods:
+            if target_method not in methods:
                 continue
 
+            target = methods[target_method]
+            extracted_members[target.start.line] = target
+
+            # 抽出対象のメソッドが同じクラスの別のメソッドを呼び出している場合、それらも抽出する
+            for internal_method in self.internal_methods:
+                if internal_method is target_method:
+                    continue
+
+                if 'self.' + internal_method in target.getText():
+                    extracted_members[methods[internal_method].start.line] = methods[internal_method]
+
+        # extracted_membersを行番号の昇順に並べ替え、文字列に変換する
+        for key in sorted(extracted_members.keys()):
+            member = extracted_members[key]
+            members_lines += member.getText() + '\n'
+
+        class_lines += '{\n' + members_lines + '}\n'
 
         self.contents[ctx.start.line] = class_lines + '\n'
 
