@@ -1,111 +1,12 @@
+import pytest
+from unittest.mock import patch
+
+import src.logger
 from .java_extractor import JavaExtractor
-from .java_extractor import Listener
-from .grammer.JavaParser import JavaParser
-
-def test_extract():
-    extractor = JavaExtractor()
-    file_content = """
-    package com.example;
-    import java.util.List;
-    public class TestClass {
-        private int number;
-        public void testMethod(String param) {
-            List<String> list = new ArrayList<>();
-            list.add(param);
-            System.out.println(list);
-        }
-    }
-    """
-    methods = ["testMethod"]
-    expected_ast_info = {
-        'packageName': 'com.example',
-        'className': 'TestClass',
-        'implements': [],
-        'extends': '',
-        'imports': ['java.util.List'],
-        'fields': [{'fieldType': 'private int', 'fieldDefinition': 'number;'}],
-        'methods': [
-            {
-                'returnType': 'public void',
-                'methodName': 'testMethod',
-                'params': [{'paramType': 'String', 'paramName': 'param'}],
-                'callMethods': []
-            }
-        ]
-    }
-    ast_info = extractor.extract(file_content, methods)
-    assert ast_info == expected_ast_info
 
 
-def test_extract2():
-    extractor = JavaExtractor()
-    file_content = """/*
-    * Copyright (C) 2013-2018 NTT DATA Corporation
-    *
-    * Licensed under the Apache License, Version 2.0 (the "License");
-    * you may not use this file except in compliance with the License.
-    * You may obtain a copy of the License at
-    *
-    *     http://www.apache.org/licenses/LICENSE-2.0
-    *
-    * Unless required by applicable law or agreed to in writing, software
-    * distributed under the License is distributed on an "AS IS" BASIS,
-    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-    * either express or implied. See the License for the specific language
-    * governing permissions and limitations under the License.
-    */
-    package org.terasoluna.tourreservation.domain.service.tourinfo;
-
-    import java.util.Collections;
-    import java.util.List;
-
-    import javax.inject.Inject;
-
-    import org.springframework.data.domain.Page;
-    import org.springframework.data.domain.PageImpl;
-    import org.springframework.data.domain.Pageable;
-    import org.springframework.stereotype.Service;
-    import org.springframework.transaction.annotation.Transactional;
-    import org.terasoluna.tourreservation.domain.model.TourInfo;
-    import org.terasoluna.tourreservation.domain.repository.tourinfo.TourInfoRepository;
-    import org.terasoluna.tourreservation.domain.repository.tourinfo.TourInfoSearchCriteria;
-
-    /**
-    * Service for search tour information.
-    */
-    @Service
-    @Transactional
-    public class TourInfoServiceImpl implements TourInfoService {
-
-        @Inject
-        TourInfoRepository tourInfoRepository;
-
-        @Override
-        public Page<TourInfo> searchTour(TourInfoSearchCriteria criteria,
-                Pageable pageable) {
-
-            long total = tourInfoRepository.countBySearchCriteria(criteria);
-            List<TourInfo> content;
-            if (0 < total) {
-                content = tourInfoRepository.findPageBySearchCriteria(criteria,
-                        pageable);
-            } else {
-                content = Collections.emptyList();
-            }
-
-            Page<TourInfo> page = new PageImpl<TourInfo>(content, pageable, total);
-            return page;
-        }
-    }
-    """
-    methods = ["testMethod"]
-    expected_ast_info = {
-    }
-    ast_info = extractor.extract(file_content, methods)
-    assert ast_info == expected_ast_info
-
-class TestListener:
-    def test_extract_java_method(self):
+class TestJavaExtractor:
+    def test_extract_method_names(self):
         file_content = """package com.example.sample;
 
 import java.util.List;
@@ -117,7 +18,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class SampleService {
   private SampleRepository sampleRepository;
-  String temp;
 
   public List<SampleItem> getExistItems(List<Long> ids) {
     return this.sampleRepository.findByItemIdIn(ids);
@@ -138,8 +38,80 @@ public class SampleService {
   }
 }
 """
-        methods = ["getExistItems"]
-        expected = """package com.example.sample;
+        expected_methods = ["getExistItems", "existAll", "existItemIdInItems"]
+        package_name = "com.example.sample"
+        class_name = "SampleService"
+        expected = [
+            package_name + '.' + class_name + '#' + method_name
+            for method_name in expected_methods
+        ]
+
+        extractor = JavaExtractor()
+        actual = extractor.extract_method_names(file_content)
+        assert actual == expected
+
+    @patch.object(src.logger.Logger, '__init__', return_value=None)
+    @patch.object(src.logger.Logger, 'error', return_value=None)
+    @pytest.mark.parametrize('file_content, methods, expected', [
+        (
+            """package com.example;
+import java.util.List;
+public class TestClass {
+    private int number;
+    public void testMethod(String param) {
+        List<String> list = new ArrayList<>();
+        list.add(param);
+        System.out.println(list);
+    }
+}
+""",
+            ["testMethod"],
+            """package com.example;
+import java.util.List;
+public class TestClass {
+    private int number;
+    public void testMethod(String param) {
+        List<String> list = new ArrayList<>();
+        list.add(param);
+        System.out.println(list);
+    }
+}
+""",
+        ),
+        (
+            """package com.example.sample;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import lombok.AllArgsConstructor;
+
+@Service
+@AllArgsConstructor
+public class SampleService {
+  private SampleRepository sampleRepository;
+
+  public List<SampleItem> getExistItems(List<Long> ids) {
+    return this.sampleRepository.findByItemIdIn(ids);
+  }
+
+  @Override
+  public boolean existAll(List<Long> ids) {
+    List<CatalogItem> items = this.sampleRepository.findByIdIn(ids);
+    List<Long> notExistIds = ids.stream()
+        .filter(itemId -> !this.existItemIdInItems(items, itemId))
+        .collect(Collectors.toList());
+
+    return notExistIds.isEmpty();
+  }
+
+  private boolean existItemIdInItems(List<SampleItem> items, long id) {
+    return items.stream().anyMatch(item -> item.getId() == id);
+  }
+}
+""",
+            ['getExistItems'],
+            """package com.example.sample;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -156,7 +128,194 @@ public class SampleService {
   }
 }
 """
+        ),
+        (
+            """package com.example.sample;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import lombok.AllArgsConstructor;
+
+@Service
+@AllArgsConstructor
+public class SampleService {
+  private SampleRepository sampleRepository;
+
+  public List<SampleItem> getExistItems(List<Long> ids) {
+    return this.sampleRepository.findByItemIdIn(ids);
+  }
+
+  @Override
+  public boolean existAll(List<Long> ids) {
+    List<CatalogItem> items = this.sampleRepository.findByIdIn(ids);
+    List<Long> notExistIds = ids.stream()
+        .filter(itemId -> !this.existItemIdInItems(items, itemId))
+        .collect(Collectors.toList());
+
+    return notExistIds.isEmpty();
+  }
+
+  private boolean existItemIdInItems(List<SampleItem> items, long id) {
+    return items.stream().anyMatch(item -> item.getId() == id);
+  }
+}
+""",
+            ['getExistItems', 'existAll'],
+            """package com.example.sample;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import lombok.AllArgsConstructor;
+
+@Service
+@AllArgsConstructor
+public class SampleService {
+  private SampleRepository sampleRepository;
+
+  public List<SampleItem> getExistItems(List<Long> ids) {
+    return this.sampleRepository.findByItemIdIn(ids);
+  }
+
+  @Override
+  public boolean existAll(List<Long> ids) {
+    List<CatalogItem> items = this.sampleRepository.findByIdIn(ids);
+    List<Long> notExistIds = ids.stream()
+        .filter(itemId -> !this.existItemIdInItems(items, itemId))
+        .collect(Collectors.toList());
+
+    return notExistIds.isEmpty();
+  }
+}
+"""
+        ),
+        (
+             """package com.example.sample;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import lombok.AllArgsConstructor;
+
+/**
+ * The SampleService class is a service layer in the application that handles business logic related to SampleItems.
+ * It uses the SampleRepository to interact with the underlying data store.
+ *
+ * It provides methods to:
+ * - Get existing items from the repository by their IDs.
+ * - Check if all the items identified by the given IDs exist in the repository.
+ * - Check if a given item ID exists in the provided list of items.
+ *
+ * @Service This annotation is a specialized form of the component annotation which allows us
+ * to auto-detect implementation classes through classpath scanning.
+ * @AllArgsConstructor This annotation from the Lombok library generates a constructor with a parameter
+ * for each field in the class.
+ */
+@Service
+@AllArgsConstructor
+public class SampleService {
+  private SampleRepository sampleRepository;
+  
+  /**
+   * This method is used to get the existing items from the repository by their IDs.
+   *
+   * @param ids A list of item IDs to be searched in the repository.
+   * @return A list of SampleItem objects that exist in the repository.
+   */
+  public List<SampleItem> getExistItems(List<Long> ids) {
+    return this.sampleRepository.findByItemIdIn(ids);
+  }
+
+  /**
+   * This method checks if all the items identified by the given IDs exist in the repository.
+   *
+   * It first retrieves the items from the repository using the provided IDs. Then, it creates a list of IDs
+   * that do not exist in the retrieved items.
+   * If the list of non-existing IDs is empty, it means all the items exist in the repository,
+   * and the method returns true. Otherwise, it returns false.
+   *
+   * @param ids A list of item IDs to be checked in the repository.
+   * @return A boolean indicating whether all the items exist in the repository.
+   */
+  @Override
+  public boolean existAll(List<Long> ids) {
+    List<CatalogItem> items = this.sampleRepository.findByIdIn(ids);
+    List<Long> notExistIds = ids.stream()
+        .filter(itemId -> !this.existItemIdInItems(items, itemId))
+        .collect(Collectors.toList());
+
+    return notExistIds.isEmpty();
+  }
+
+  /**
+   * This method checks if a given item ID exists in the provided list of items.
+   *
+   * It iterates over the list of items and checks if any item's ID matches the provided ID.
+   * If a match is found, it returns true, indicating that the item exists in the list. Otherwise, it returns false.
+   *
+   * @param items A list of SampleItem objects.
+   * @param id The ID of the item to be checked.
+   * @return A boolean indicating whether the item exists in the list.
+   */
+  private boolean existItemIdInItems(List<SampleItem> items, long id) {
+    return items.stream().anyMatch(item -> item.getId() == id);
+  }
+}
+""",
+             ['existAll'],
+             """package com.example.sample;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import lombok.AllArgsConstructor;
+
+/**
+ * The SampleService class is a service layer in the application that handles business logic related to SampleItems.
+ * It uses the SampleRepository to interact with the underlying data store.
+ *
+ * It provides methods to:
+ * - Get existing items from the repository by their IDs.
+ * - Check if all the items identified by the given IDs exist in the repository.
+ * - Check if a given item ID exists in the provided list of items.
+ *
+ * @Service This annotation is a specialized form of the component annotation which allows us
+ * to auto-detect implementation classes through classpath scanning.
+ * @AllArgsConstructor This annotation from the Lombok library generates a constructor with a parameter
+ * for each field in the class.
+ */
+@Service
+@AllArgsConstructor
+public class SampleService {
+  private SampleRepository sampleRepository;
+
+  /**
+   * This method checks if all the items identified by the given IDs exist in the repository.
+   *
+   * It first retrieves the items from the repository using the provided IDs. Then, it creates a list of IDs
+   * that do not exist in the retrieved items.
+   * If the list of non-existing IDs is empty, it means all the items exist in the repository,
+   * and the method returns true. Otherwise, it returns false.
+   *
+   * @param ids A list of item IDs to be checked in the repository.
+   * @return A boolean indicating whether all the items exist in the repository.
+   */
+  @Override
+  public boolean existAll(List<Long> ids) {
+    List<CatalogItem> items = this.sampleRepository.findByIdIn(ids);
+    List<Long> notExistIds = ids.stream()
+        .filter(itemId -> !this.existItemIdInItems(items, itemId))
+        .collect(Collectors.toList());
+
+    return notExistIds.isEmpty();
+  }
+}
+""",
+             ),
+        ]
+    )
+    def test_extract_target_methods(self, _mock_logger, _mock_logger_error, file_content, methods, expected):
         extractor = JavaExtractor()
-        actual = extractor.extract(file_content, methods)
+        actual = extractor.extract_methods(file_content, methods)
         assert actual == expected
