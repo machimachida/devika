@@ -1,9 +1,14 @@
 from unittest.mock import mock_open
 from .read_code import ReadCode
 
+import src.config
+
 
 class TestReadCode:
     def test_read_directory_empty(self, mocker):
+        mocker.patch.object(src.config.Config, '__new__', return_value=src.config.Config)
+        mocker.patch.object(src.config.Config, 'get_projects_dir', return_value='/fakepath/project-name')
+
         # Mock os.path.join to return a path (adjust the logic as needed)
         mocker.patch('os.path.join', return_value='/fakepath/project-name')
 
@@ -19,8 +24,10 @@ class TestReadCode:
         # Assert the result is an empty list
         assert result == []
 
-
     def test_read_directory_with_files(self, mocker):
+        mocker.patch.object(src.config.Config, '__new__', return_value=src.config.Config)
+        mocker.patch.object(src.config.Config, 'get_projects_dir', return_value='/fakepath/project-name')
+
         # Mock os.path.join to handle the path joining
         mocker.patch('os.path.join', side_effect=lambda *args: '/'.join(args))
 
@@ -48,8 +55,10 @@ class TestReadCode:
         assert result == expected
         assert m.call_count == 2  # open should be called twice
 
-
     def test_code_set_to_markdown(self, mocker):
+        mocker.patch.object(src.config.Config, '__new__', return_value=src.config.Config)
+        mocker.patch.object(src.config.Config, 'get_projects_dir', return_value='/fakepath/project-name')
+
         # Prepare a return value for read_directory using a mocker
         mocker.patch.object(ReadCode, 'read_directory', return_value=[
             {'filename': 'file1.py', 'code': 'print("Hello, Python")'},
@@ -64,3 +73,63 @@ class TestReadCode:
         
         # Check if generated markdown is correct
         assert markdown == expected_markdown
+
+    def test_get_methods_names(self, mocker):
+        mocker.patch.object(src.config.Config, '__new__', return_value=src.config.Config)
+        mocker.patch.object(src.config.Config, 'get_projects_dir', return_value='/fakepath/project-name')
+        mocker.patch('os.path.join', side_effect=lambda *args: '/'.join(args))
+        files = [
+            ('/fakepath/project-name/src/java/com/example/lib', [], ['file2.java', 'file3.java']),
+            ('/fakepath/project-name/src/java/com/example', [], ['file1.java']),
+        ]
+        mocker.patch('os.walk', return_value=files)
+
+        mock_file2 = mock_open(read_data='''package com.example.lib;
+
+public class TestClass2 {
+    private int number;
+
+    public void testMethod2(String param) {
+        System.out.println(param);
+        System.out.println(number);
+    }
+}
+''').return_value
+        mock_file3 = mock_open(read_data='''package com.example.lib;
+
+public class TestClass3 {
+    private int number;
+
+    public void testMethod3(String param) {
+        System.out.println(param);
+        System.out.println(number);
+    }
+    
+    public void testMethod4(String param) {
+        System.out.println(param);
+        System.out.println(number);
+    }
+}
+''').return_value
+        mock_file1 = mock_open(read_data='''package com.example;
+
+public class TestClass1 {
+    private int number;
+
+    public void testMethod1(String param) {
+        System.out.println(param);
+        System.out.println(number);
+    }
+}
+''').return_value
+        mocker.patch('builtins.open', side_effect=[mock_file2, mock_file3, mock_file1])
+
+        rc = ReadCode("Project Name")
+        result = rc.get_methods_names()
+
+        assert result == {
+            'com.example.TestClass1#testMethod1': '/fakepath/project-name/src/java/com/example/file1.java',
+            'com.example.lib.TestClass2#testMethod2': '/fakepath/project-name/src/java/com/example/lib/file2.java',
+            'com.example.lib.TestClass3#testMethod3': '/fakepath/project-name/src/java/com/example/lib/file3.java',
+            'com.example.lib.TestClass3#testMethod4': '/fakepath/project-name/src/java/com/example/lib/file3.java',
+        }

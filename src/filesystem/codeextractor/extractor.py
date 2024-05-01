@@ -10,18 +10,18 @@ class Extractor:
     def __init__(self, language: str):
         """
         Constructor for Extractor class.
-        
+
         Args:
             language (str): Language of the code.
 
         Returns:
             None
-        
+
         Raises:
             ValueError: If the language is not supported.
         """
 
-        language = SupportedLanguages[language]
+        language = SupportedLanguages(language)
         extractors = {
             SupportedLanguages.JAVA: JavaExtractor
         }
