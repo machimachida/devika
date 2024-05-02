@@ -33,16 +33,29 @@ class Researcher:
         except Exception as _:
             return False
 
-        response = {k.replace("\\", ""): v for k, v in response.items()}
-
-        if "queries" not in response and "ask_user" not in response:
+        if "plans" not in response:
             return False
-        else:
-            return {
-                "queries": response["queries"],
-                "ask_user": response["ask_user"]
-            }
-        
+
+        query_list: list[dict[str, str]] = []
+        for plan in response["plans"]:
+            if "queries" not in plan and "ask_user" not in plan:
+                return False
+            else:
+                query_list.append({
+                    "queries": plan["queries"],
+                    "ask_user": plan["ask_user"]
+                })
+
+        queries: list[str] = []
+        ask_user: str = ""
+        for i, query in enumerate(query_list):
+            queries.append(query["queries"])
+            ask_user = ask_user + str(i+1) + query["ask_user"] + "\n"
+        return {
+            "queries": queries,
+            "ask_user": ask_user
+        }
+
     @retry_wrapper
     def execute(self, step_by_step_plan: str, contextual_keywords: List[str], project_name: str) -> dict | bool:
         contextual_keywords_str = ", ".join(map(lambda k: k.capitalize(), contextual_keywords))
