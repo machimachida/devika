@@ -1,0 +1,35 @@
+Project Step-by-step Plan:
+
+```
+{{ step_by_step_plan }}
+```
+
+Context From User:
+```
+{{ user_context }}
+```
+
+Methods in the codebase in project. The methods are formatted as package_name.class_name#method_name.:
+
+```
+{% for method in methods %}
+    {{ method }}
+{% endfor %}
+```
+
+You are an engineer programming in Java.
+You need to implement a new feature within an existing codebase.
+You want to use an existing method as a reference for your implementation.
+You choose similar methods with a new feature.
+Which method from the list below would be suitable for reference?
+
+Your response should be in the following JSON format:
+
+```
+{
+  "methods": [
+    "com.example.task.TaskService#createTask",
+    "com.example.user.UserService#createUser"
+  ]
+}
+```
