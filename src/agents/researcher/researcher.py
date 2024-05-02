@@ -49,8 +49,9 @@ class Researcher:
         queries: list[str] = []
         ask_user: str = ""
         for i, query in enumerate(query_list):
-            queries.append(query["queries"])
-            ask_user = ask_user + str(i+1) + query["ask_user"] + "\n"
+            queries.extend(query["queries"])
+            if query["ask_user"] != "":
+                ask_user = ask_user + str(i+1) + query["ask_user"] + "\n"
         return {
             "queries": queries,
             "ask_user": ask_user
