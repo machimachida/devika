@@ -4,7 +4,7 @@ from typing import List
 from jinja2 import Environment, BaseLoader
 
 from src.llm import LLM
-from src.services.utils import retry_wrapper
+from src.services.utils import retry_wrapper, validate_responses
 from src.browser.search import BingSearch
 
 PROMPT = open("src/agents/researcher/prompt.jinja2").read().strip()
@@ -23,40 +23,17 @@ class Researcher:
             contextual_keywords=contextual_keywords
         )
 
+    @validate_responses
     def validate_response(self, response: str) -> dict | bool:
-        response = response.strip().replace("```json", "```")
 
-        if response.startswith("```") and response.endswith("```"):
-            response = response[3:-3].strip()
-        try:
-            response = json.loads(response)
-        except Exception as _:
+        if "queries" not in response and "ask_user" not in response:
             return False
-
-        if "plans" not in response:
-            return False
-
-        query_list: list[dict[str, str]] = []
-        for plan in response["plans"]:
-            if "queries" not in plan and "ask_user" not in plan:
-                return False
-            else:
-                query_list.append({
-                    "queries": plan["queries"],
-                    "ask_user": plan["ask_user"]
-                })
-
-        queries: list[str] = []
-        ask_user: str = ""
-        for i, query in enumerate(query_list):
-            queries.extend(query["queries"])
-            if query["ask_user"] != "":
-                ask_user = ask_user + str(i+1) + query["ask_user"] + "\n"
-        return {
-            "queries": queries,
-            "ask_user": ask_user
-        }
-
+        else:
+            return {
+                "queries": response["queries"],
+                "ask_user": response["ask_user"]
+            }
+        
     @retry_wrapper
     def execute(self, step_by_step_plan: str, contextual_keywords: List[str], project_name: str) -> dict | bool:
         contextual_keywords_str = ", ".join(map(lambda k: k.capitalize(), contextual_keywords))
