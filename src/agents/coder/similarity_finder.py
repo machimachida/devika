@@ -34,10 +34,10 @@ class SimilarityFinder:
         return response
 
     @retry_wrapper
-    def execute(self, project_name: str) -> str:
+    def execute(self, step_by_step_plan: str, user_context: str, project_name: str) -> str:
         methods_dict: dict[str, str] = ReadCode(project_name).get_methods_names()
         methods: list[str] = list(methods_dict.keys())
-        prompt = self.render(step_by_step_plan="", user_context="", methods=methods)
+        prompt = self.render(step_by_step_plan=step_by_step_plan, user_context=user_context, methods=methods)
         response = self.llm.inference(prompt, project_name)
 
         valid_response = self.validate_response(response)

@@ -1,13 +1,13 @@
 from unittest.mock import mock_open
 from .read_code import ReadCode
 
-import src.config
+from src.config import Config
 
 
 class TestReadCode:
     def test_read_directory_empty(self, mocker):
-        mocker.patch.object(src.config.Config, '__new__', return_value=src.config.Config)
-        mocker.patch.object(src.config.Config, 'get_projects_dir', return_value='/fakepath/project-name')
+        mocker.patch.object(Config, '__new__', return_value=Config)
+        mocker.patch.object(Config, 'get_projects_dir', return_value='/fakepath/project-name')
 
         # Mock os.path.join to return a path (adjust the logic as needed)
         mocker.patch('os.path.join', return_value='/fakepath/project-name')
@@ -25,8 +25,8 @@ class TestReadCode:
         assert result == []
 
     def test_read_directory_with_files(self, mocker):
-        mocker.patch.object(src.config.Config, '__new__', return_value=src.config.Config)
-        mocker.patch.object(src.config.Config, 'get_projects_dir', return_value='/fakepath/project-name')
+        mocker.patch.object(Config, '__new__', return_value=Config)
+        mocker.patch.object(Config, 'get_projects_dir', return_value='/fakepath/project-name')
 
         # Mock os.path.join to handle the path joining
         mocker.patch('os.path.join', side_effect=lambda *args: '/'.join(args))
@@ -56,8 +56,8 @@ class TestReadCode:
         assert m.call_count == 2  # open should be called twice
 
     def test_code_set_to_markdown(self, mocker):
-        mocker.patch.object(src.config.Config, '__new__', return_value=src.config.Config)
-        mocker.patch.object(src.config.Config, 'get_projects_dir', return_value='/fakepath/project-name')
+        mocker.patch.object(Config, '__new__', return_value=Config)
+        mocker.patch.object(Config, 'get_projects_dir', return_value='/fakepath/project-name')
 
         # Prepare a return value for read_directory using a mocker
         mocker.patch.object(ReadCode, 'read_directory', return_value=[
@@ -70,13 +70,13 @@ class TestReadCode:
 
         # Expected markdown string
         expected_markdown = "### file1.py:\n\n```\nprint(\"Hello, Python\")\n```\n\n---\n\n"
-        
+
         # Check if generated markdown is correct
         assert markdown == expected_markdown
 
     def test_get_methods_names(self, mocker):
-        mocker.patch.object(src.config.Config, '__new__', return_value=src.config.Config)
-        mocker.patch.object(src.config.Config, 'get_projects_dir', return_value='/fakepath/project-name')
+        mocker.patch.object(Config, '__new__', return_value=Config)
+        mocker.patch.object(Config, 'get_projects_dir', return_value='/fakepath/project-name')
         mocker.patch('os.path.join', side_effect=lambda *args: '/'.join(args))
         files = [
             ('/fakepath/project-name/src/java/com/example/lib', [], ['file2.java', 'file3.java']),
