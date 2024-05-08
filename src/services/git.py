@@ -1,14 +1,19 @@
 import json
 import git as GitPython
-
 from jinja2 import Environment, BaseLoader
+from pathlib import Path
+
 from src.llm import LLM
-PROMPT = open("src/services/prompt.jinja2").read().strip()
+
 
 class Git:
     
     def __init__(self, path, base_model: str):
         self.llm = LLM(model_id=base_model)
+        parent = Path(__file__).resolve().parent
+        with open(parent.joinpath("prompt.jinja2"), 'r') as file:
+            self.prompt_template = file.read().strip()
+
         try:
             self.repo = GitPython.Repo(path)
         except GitPython.exc.InvalidGitRepositoryError:
@@ -18,7 +23,7 @@ class Git:
         self, conversation: str, code_markdown: str, code_diff: str
     ) -> str:
         env = Environment(loader=BaseLoader())
-        template = env.from_string(PROMPT)
+        template = env.from_string(self.prompt_template)
         return template.render(
             conversation=conversation,
             code_markdown=code_markdown,
