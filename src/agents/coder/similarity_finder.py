@@ -1,17 +1,11 @@
-import os
-import time
-
 from jinja2 import Environment, BaseLoader
-from typing import List, Dict, Union
+from pathlib import Path
 
 from src.config import Config
 from src.filesystem import ReadCode
 from src.llm import LLM
 from src.logger import Logger
 from src.services.utils import retry_wrapper
-from src.state import AgentState
-
-PROMPT = open("src/agents/coder/similarity.jinja2", "r").read().strip()
 
 
 class SimilarityFinder:
@@ -20,10 +14,13 @@ class SimilarityFinder:
         self.project_dir = config.get_projects_dir()
         self.logger = Logger()
         self.llm = LLM(model_id=base_model)
+        parent = Path(__file__).resolve().parent
+        with open(parent.joinpath("similarity.jinja2"), 'r') as file:
+            self.prompt_template = file.read().strip()
 
     def render(self, step_by_step_plan: str, user_context: str, methods: list[str]) -> str:
         env = Environment(loader=BaseLoader())
-        template = env.from_string(PROMPT)
+        template = env.from_string(self.prompt_template)
         return template.render(
             step_by_step_plan=step_by_step_plan,
             user_context=user_context,
