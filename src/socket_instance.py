@@ -4,9 +4,20 @@ from src.logger import Logger
 
 
 class EmitAgent:
-    def __init__(self):
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialize_instances()
+        return cls._instance
+
+    def _initialize_instances(self):
         self.socketio = SocketIO(cors_allowed_origins="*", async_mode="gevent")
         self.logger = Logger()
+
+    def get_socketio(self):
+        return self.socketio
 
     def emit_content(self, channel, content, log=True):
         try:
