@@ -122,7 +122,7 @@ class Coder:
         user_context: str,
         search_results: dict,
         project_name: str
-    ) -> str:
+    ) -> Union[List[Dict[str, str]], bool]:
         prompt = self.render(step_by_step_plan, user_context, search_results)
         response = self.llm.inference(prompt, project_name)
         

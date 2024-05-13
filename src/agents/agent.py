@@ -168,8 +168,13 @@ class Agent:
                 plan = self.planner.execute(user_prompt, project_name)
                 planner_response = self.planner.parse_response(plan)
 
-                research = self.researcher.execute(plan, self.collected_context_keywords, project_name)
-                search_results = self.search_queries(research["queries"], project_name)
+                no_research = True
+                if no_research:  # TODO: set no_research from config
+                    research = {"ask_user": ""}
+                    search_results = {}
+                else:
+                    research = self.researcher.execute(plan, self.collected_context_keywords, project_name)
+                    search_results = self.search_queries(research["queries"], project_name)
 
                 code = self.coder.execute(
                     step_by_step_plan=plan,
