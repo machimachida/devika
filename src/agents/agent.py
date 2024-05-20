@@ -327,8 +327,12 @@ class Agent:
         new_state["internal_monologue"] = internal_monologue
         self.agent_state.add_to_current_state(project_name, new_state)
 
-        research = self.researcher.execute(plan, self.collected_context_keywords, project_name=project_name)
-        print("\nresearch :: ", research, '\n')
+        no_research = True
+        if no_research:  # TODO: set no_research from config
+            research = {"ask_user": "", "queries": []}
+        else:
+            research = self.researcher.execute(plan, self.collected_context_keywords, project_name=project_name)
+            print("\nresearch :: ", research, '\n')
 
         queries = research["queries"]
         queries_combined = ", ".join(queries)

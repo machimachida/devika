@@ -79,10 +79,10 @@ class TestSimilarityFinder:
         # mocker.patch.object(src.config.Config, '__new__', return_value=src.config.Config)
         mocker.patch.object(src.config.Config, 'get_projects_dir', return_value='/fakepath/project-name')
         # mocker.patch.object(src.logger.Logger, '__init__', return_value=None)
-        mocker.patch(ReadCode, 'get_methods_names', return_value={method_name: "file_path" for method_name in sample_method_names})
+        mocker.patch.object(ReadCode, 'get_methods_names', return_value={method_name: "file_path" for method_name in sample_method_names})
 
         step_by_step_plan = "Step by step plan"
 
         similarity_finder = SimilarityFinder(base_model="AZURE GPT")
-        result = similarity_finder.execute(step_by_step_plan, "", "Project Name")
+        result = similarity_finder.execute(step_by_step_plan, "Project Name")
         print(result)
