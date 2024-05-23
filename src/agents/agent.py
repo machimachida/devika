@@ -304,28 +304,32 @@ class Agent:
 
         self.agent_state.create_state(project=project_name)
 
-        plan = self.planner.execute(prompt, project_name)
-        print("\nplan :: ", plan, '\n')
+        no_planner = True
+        if no_planner:  # TODO: set no_planner from config
+            plan = prompt  # コード記述処理でplanを使うので、ここでpromptを代入しておく。本来step_by_step_planが入るが、Plannerが必要ない場合があるので省略するようにする。
+        else:
+            plan = self.planner.execute(prompt, project_name)
+            print("\nplan :: ", plan, '\n')
 
-        planner_response = self.planner.parse_response(plan)
-        reply = planner_response["reply"]
-        focus = planner_response["focus"]
-        plans = planner_response["plans"]
-        summary = planner_response["summary"]
+            planner_response = self.planner.parse_response(plan)
+            reply = planner_response["reply"]
+            focus = planner_response["focus"]
+            plans = planner_response["plans"]
+            summary = planner_response["summary"]
 
-        self.project_manager.add_message_from_devika(project_name, reply)
-        self.project_manager.add_message_from_devika(project_name, json.dumps(plans, indent=4))
-        # self.project_manager.add_message_from_devika(project_name, f"In summary: {summary}")
+            self.project_manager.add_message_from_devika(project_name, reply)
+            self.project_manager.add_message_from_devika(project_name, json.dumps(plans, indent=4))
+            # self.project_manager.add_message_from_devika(project_name, f"In summary: {summary}")
 
-        self.update_contextual_keywords(focus)
-        print("\ncontext_keywords :: ", self.collected_context_keywords, '\n')
+            self.update_contextual_keywords(focus)
+            print("\ncontext_keywords :: ", self.collected_context_keywords, '\n')
 
-        internal_monologue = self.internal_monologue.execute(current_prompt=plan, project_name=project_name)
-        print("\ninternal_monologue :: ", internal_monologue, '\n')
+            internal_monologue = self.internal_monologue.execute(current_prompt=plan, project_name=project_name)
+            print("\ninternal_monologue :: ", internal_monologue, '\n')
 
-        new_state = self.agent_state.new_state()
-        new_state["internal_monologue"] = internal_monologue
-        self.agent_state.add_to_current_state(project_name, new_state)
+            new_state = self.agent_state.new_state()
+            new_state["internal_monologue"] = internal_monologue
+            self.agent_state.add_to_current_state(project_name, new_state)
 
         no_research = True
         if no_research:  # TODO: set no_research from config
