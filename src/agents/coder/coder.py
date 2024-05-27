@@ -55,6 +55,7 @@ class Coder:
         for line in response.split("\n"):
             if line.startswith("File: "):
                 if current_file and current_code:
+                    current_file = current_file.replace("`", "")
                     result.append({"file": current_file, "code": "\n".join(current_code)})
                 current_file = line.split(":")[1].strip()
                 current_code = []
@@ -65,6 +66,7 @@ class Coder:
                 current_code.append(line)
 
         if current_file and current_code:
+            current_file = current_file.replace("`", "")
             result.append({"file": current_file, "code": "\n".join(current_code)})
 
         return result

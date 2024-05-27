@@ -44,7 +44,7 @@ class ReadCode:
             for file in files:
                 try:
                     file_path = os.path.join(root, file)
-                    with open(file_path, 'r') as file_content:
+                    with open(file_path, 'r', encoding='utf-8') as file_content:
                         content = file_content.read()
                         method_names = extractor.extract_method_names(content)
                         for method_name in method_names:

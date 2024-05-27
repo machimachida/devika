@@ -133,3 +133,10 @@ public class TestClass1 {
             'com.example.lib.TestClass3#testMethod3': '/fakepath/project-name/src/java/com/example/lib/file3.java',
             'com.example.lib.TestClass3#testMethod4': '/fakepath/project-name/src/java/com/example/lib/file3.java',
         }
+
+    def test_get_methods_names_with_actual_files(self, mocker):
+        mocker.patch.object(Config, '__new__', return_value=Config)
+        mocker.patch.object(Config, 'get_projects_dir', return_value='./data/projects')
+        rc = ReadCode("minimum")
+        result = rc.get_methods_names()
+        print(result)
