@@ -1,4 +1,4 @@
-import pytest
+from pytest import mark
 from unittest.mock import patch
 
 import src.logger
@@ -6,8 +6,9 @@ from .java_extractor import JavaExtractor
 
 
 class TestJavaExtractor:
-    def test_extract_method_names(self):
-        file_content = """package com.example.sample;
+    @mark.parametrize(['file_content', 'expected_methods', 'package_name', 'class_name'], [
+        (
+            """package com.example.sample;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,22 +38,51 @@ public class SampleService {
     return items.stream().anyMatch(item -> item.getId() == id);
   }
 }
-"""
-        expected_methods = ["getExistItems", "existAll", "existItemIdInItems"]
-        package_name = "com.example.sample"
-        class_name = "SampleService"
-        expected = [
-            package_name + '.' + class_name + '#' + method_name
-            for method_name in expected_methods
-        ]
+""",
+            ["getExistItems", "existAll", "existItemIdInItems"],
+            "com.example.sample",
+            "SampleService",
+        ),
+        (
+                """package com.example.sample;
+
+import lombok.Data;
+
+@Data
+public class Item {
+    private long id;
+    private String name;
+}
+""",
+                [],
+                "com.example.sample",
+                "Item",
+        )
+    ])
+    def test_extract_method_names(self, file_content, expected_methods, package_name, class_name):
+        if len(expected_methods) > 0:
+            expected = (
+                [],
+                [
+                    package_name + '.' + class_name + '#' + method_name
+                    for method_name in expected_methods
+                ]
+            )
+        else:
+            expected = (
+                [
+                    package_name + '.' + class_name
+                ],
+                []
+            )
 
         extractor = JavaExtractor()
-        actual = extractor.extract_method_names(file_content)
+        actual = extractor.extract_class_method_names(file_content)
         assert actual == expected
 
     @patch.object(src.logger.Logger, '__init__', return_value=None)
     @patch.object(src.logger.Logger, 'error', return_value=None)
-    @pytest.mark.parametrize('file_content, methods, expected', [
+    @mark.parametrize('file_content, methods, expected', [
         (
             """package com.example;
 import java.util.List;

@@ -1,2 +1,2 @@
 from .method_extract_listener import MethodExtractListener
-from .method_name_listener import MethodNameListener
+from .name_listener import NameListener

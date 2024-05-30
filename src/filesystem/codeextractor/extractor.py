@@ -27,17 +27,18 @@ class Extractor:
         }
         self.extractor = extractors[language]
 
-    def extract_method_names(self, file_content: str) -> list[str]:
+    def extract_class_method_names(self, file_content: str) -> tuple[list[str], list[str]]:
         """
-        Extract method names from the code.
+        Extract class and method names from the code.
 
         Args:
             file_content (str): Content of the file.
 
         Returns:
-            list[str]: List of method names.
+            tuple[list[str], list[str]]: List of method names and list of class names.
+            The classes have no methods.
         """
-        return self.extractor.extract_method_names(file_content)
+        return self.extractor.extract_class_method_names(file_content)
 
     def extract_methods(self, file_content: str, methods: list[str]) -> str:
         """
