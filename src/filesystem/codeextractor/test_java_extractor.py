@@ -59,7 +59,7 @@ public class Item {
                 "Item",
         )
     ])
-    def test_extract_method_names(self, file_content, expected_methods, package_name, class_name):
+    def test_extract_class_method_names(self, file_content, expected_methods, package_name, class_name):
         if len(expected_methods) > 0:
             expected = (
                 [],
