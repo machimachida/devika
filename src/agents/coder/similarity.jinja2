@@ -1,30 +1,103 @@
-Project Step-by-step Plan:
+User's instruction:
 
 ```
-{{ step_by_step_plan }}
+{{ instruction }}
 ```
-
-Methods in the codebase in project. The methods are formatted as package_name.class_name#method_name.:
+Classes and methods in the codebase in the project.
+Classes are formatted as package_name.class_name and methods are formatted as package_name.class_name#method_name.
 
 ```
+## classes (no methods are defined within these classes)
+
+{% for cls in classes %}
+    {{ cls }}
+{% endfor %}
+
+These classes do not have any methods defined within them.
+
+## methods
+
 {% for method in methods %}
     {{ method }}
 {% endfor %}
 ```
 
-You are an engineer programming in Java.
+You are a programmer in Java.
 You need to implement a new feature within an existing codebase.
-You want to use an existing method as a reference for your implementation.
-You choose similar methods with a new feature.
-Which method from the list below would be suitable for reference?
+You want to use existing classes and methods as a reference for your implementation.
+You choose similar classes and methods for a new feature.
+Which classes and methods from the list below would be suitable for reference?
 
 Your response should be in the following JSON format:
 
 ```
 {
+  "classes": [
+    "com.example.task.Task",
+    "com.example.task.Tag"
+  ],
   "methods": [
     "com.example.task.TaskService#createTask",
     "com.example.user.UserService#createUser"
   ]
 }
 ```
+
+## Example
+
+User's instruction:
+
+```
+Implement a method to add a Tag to a Task.
+```
+
+Classes and methods in the codebase in the project.
+Classes are formatted as package_name.class_name and methods are formatted as package_name.class_name#method_name.
+
+```
+## classes (no methods are defined within these classes)
+
+com.example.account.Account
+com.example.task.Task
+com.example.task.Tag
+com.example.user.User
+
+These classes do not have any methods defined within them.
+
+## methods
+
+com.example.account.AccountService#getAccounts
+com.example.task.TaskService#createTask
+com.example.task.TaskService#readTasks
+com.example.task.TaskService#readTask
+com.example.task.TaskService#updateTask
+com.example.task.TaskService#deleteTask
+com.example.user.UserService#createUser
+com.example.user.UserService#readUsers
+com.example.user.UserService#readUser
+com.example.user.UserService#updateUser
+com.example.user.UserService#deleteUser
+```
+
+You are a programmer in Java.
+You need to implement a new feature within an existing codebase.
+You want to use existing classes and methods as a reference for your implementation.
+You choose similar classes and methods for a new feature.
+Which classes and methods from the list below would be suitable for reference?
+
+Your response should be in the following JSON format:
+
+```
+{
+  "classes": [
+    "com.example.task.Task",
+    "com.example.task.Tag"
+  ],
+  "methods": [
+    "com.example.task.TaskService#createTask",
+    "com.example.user.UserService#createUser"
+  ]
+}
+```
+
+This choice is based on the potential use of instances in the implementation and the desire to reference methods similar to the feature being implemented.

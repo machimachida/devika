@@ -19,25 +19,28 @@ class SimilarityFinder:
         with open(parent.joinpath("similarity.jinja2"), 'r') as file:
             self.prompt_template = file.read().strip()
 
-    def render(self, step_by_step_plan: str, methods: list[str]) -> str:
+    def render(self, instruction: str, classes: list[str], methods: list[str]) -> str:
         env = Environment(loader=BaseLoader())
         template = env.from_string(self.prompt_template)
         return template.render(
-            step_by_step_plan=step_by_step_plan,
+            instruction=instruction,
+            classes=classes,
             methods=methods,
         )
 
-    def validate_response(self, response: str) -> list[str]:
+    def validate_response(self, response: str) -> tuple[list[str], list[str]]:
         """
-        以下の形式でレスポンスが返却されていることを確認し、methodsのもつlistを返却する
+        以下の形式でレスポンスが返却されていることを確認し、classesとmethodsを返却する
 
         ```
         {
+          "classes": [
+            "com.example.task.Task",
+          ],
           "methods": [
             "com.example.task.TaskService#createTask",
             "com.example.user.UserService#createUser"
           ]
-        }
         }
         ```
         """
@@ -45,17 +48,18 @@ class SimilarityFinder:
         try:
             # \nやスペースの他に、```がJSONの前後にある場合があるので、削除する
             stripped = response.strip().replace('```', '')
-            response_dict = json.loads(stripped)
-            return response_dict.get('methods', [])
+            response = json.loads(stripped)
+            return response["classes"], response["methods"]
         except json.JSONDecodeError:
             self.logger.error(f'Failed to decode response as JSON: {response}')
-            return []
+            return [], []
 
     @retry_wrapper
-    def execute(self, step_by_step_plan: str, project_name: str) -> list[str]:
-        methods_dict: dict[str, str] = ReadCode(project_name).get_methods_names()
-        methods: list[str] = list(methods_dict.keys())
-        prompt = self.render(step_by_step_plan=step_by_step_plan, methods=methods)
+    def execute(self, instruction: str, project_name: str) -> tuple[list[str], list[str]]:
+        classes, methods = ReadCode(project_name).get_class_method_names()
+        class_names: list[str] = list(classes.keys())
+        method_names: list[str] = list(methods.keys())
+        prompt = self.render(instruction=instruction, classes=class_names, methods=method_names)
         response = self.llm.inference(prompt, project_name)
 
         return self.validate_response(response)

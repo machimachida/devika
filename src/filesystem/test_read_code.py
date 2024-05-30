@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import mock_open
 from .read_code import ReadCode
 
@@ -74,13 +75,13 @@ class TestReadCode:
         # Check if generated markdown is correct
         assert markdown == expected_markdown
 
-    def test_get_methods_names(self, mocker):
+    def test_get_class_method_names(self, mocker):
         mocker.patch.object(Config, '__new__', return_value=Config)
         mocker.patch.object(Config, 'get_projects_dir', return_value='/fakepath/project-name')
         mocker.patch('os.path.join', side_effect=lambda *args: '/'.join(args))
         files = [
             ('/fakepath/project-name/src/java/com/example/lib', [], ['file2.java', 'file3.java']),
-            ('/fakepath/project-name/src/java/com/example', [], ['file1.java']),
+            ('/fakepath/project-name/src/java/com/example', [], ['file1.java', 'file4.java']),
         ]
         mocker.patch('os.walk', return_value=files)
 
@@ -122,21 +123,31 @@ public class TestClass1 {
     }
 }
 ''').return_value
-        mocker.patch('builtins.open', side_effect=[mock_file2, mock_file3, mock_file1])
+        mock_file4 = mock_open(read_data='''package com.example;
+        
+public class TestClass4 {
+    private int number1;
+    private int number2;
+}
+''').return_value
+        mocker.patch('builtins.open', side_effect=[mock_file2, mock_file3, mock_file1, mock_file4])
 
         rc = ReadCode("Project Name")
-        result = rc.get_methods_names()
+        classes, methods = rc.get_class_method_names()
 
-        assert result == {
+        assert classes == {
+            'com.example.TestClass4': '/fakepath/project-name/src/java/com/example/file4.java',
+        }
+        assert methods == {
             'com.example.TestClass1#testMethod1': '/fakepath/project-name/src/java/com/example/file1.java',
             'com.example.lib.TestClass2#testMethod2': '/fakepath/project-name/src/java/com/example/lib/file2.java',
             'com.example.lib.TestClass3#testMethod3': '/fakepath/project-name/src/java/com/example/lib/file3.java',
             'com.example.lib.TestClass3#testMethod4': '/fakepath/project-name/src/java/com/example/lib/file3.java',
         }
 
-    def test_get_methods_names_with_actual_files(self, mocker):
+    def test_get_class_method_names_with_actual_files(self, mocker):
         mocker.patch.object(Config, '__new__', return_value=Config)
-        mocker.patch.object(Config, 'get_projects_dir', return_value='./data/projects')
+        mocker.patch.object(Config, 'get_projects_dir', return_value=str(Path('./data/projects')))
         rc = ReadCode("minimum")
-        result = rc.get_methods_names()
+        result = rc.get_class_method_names()
         print(result)

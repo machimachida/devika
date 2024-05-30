@@ -36,7 +36,8 @@ class ReadCode:
             markdown += "---\n\n"
         return markdown
 
-    def get_methods_names(self) -> dict[str, str]:
+    def get_class_method_names(self) -> tuple[dict[str, str], dict[str, str]]:
+        class_dict: dict[str, str] = {}
         method_dict: dict[str, str] = {}
 
         extractor = Extractor('java')
@@ -46,11 +47,13 @@ class ReadCode:
                     file_path = os.path.join(root, file)
                     with open(file_path, 'r', encoding='utf-8') as file_content:
                         content = file_content.read()
-                        method_names = extractor.extract_method_names(content)
+                        class_names, method_names = extractor.extract_class_method_names(content)
+                        for class_name in class_names:
+                            class_dict[class_name] = file_path
                         for method_name in method_names:
                             method_dict[method_name] = file_path
                 except Exception as e:
                     print(e)
                     pass
 
-        return method_dict
+        return class_dict, method_dict
