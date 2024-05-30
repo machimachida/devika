@@ -37,7 +37,8 @@ class Feature:
             system_os=system_os
         )
 
-    def validate_response(self, response: str) -> Union[List[Dict[str, str]], bool]:
+    @staticmethod
+    def validate_response(response: str) -> Union[List[Dict[str, str]], bool]:
         response = response.strip()
 
         response = response.split("~~~", 1)[1]
@@ -84,7 +85,8 @@ class Feature:
         project_name = project_name.lower().replace(" ", "-")
         return f"{self.project_dir}/{project_name}"
 
-    def response_to_markdown_prompt(self, response: List[Dict[str, str]]) -> str:
+    @staticmethod
+    def response_to_markdown_prompt(response: List[Dict[str, str]]) -> str:
         response = "\n".join([f"File: `{file['file']}`:\n```\n{file['code']}\n```" for file in response])
         return f"~~~\n{response}\n~~~"
 
@@ -117,7 +119,7 @@ class Feature:
         code_markdown: str,
         system_os: str,
         project_name: str
-    ) -> str:
+    ) -> Union[List[Dict[str, str]], bool]:
         prompt = self.render(conversation, code_markdown, system_os)
         response = self.llm.inference(prompt, project_name)
         

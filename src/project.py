@@ -113,7 +113,7 @@ class ProjectManager:
             projects = session.query(Projects).all()
             return [project.project for project in projects]
 
-    def get_all_messages_formatted(self, project: str):
+    def get_all_messages_formatted(self, project: str) -> list[str]:
         formatted_messages = []
 
         with Session(self.engine) as session:

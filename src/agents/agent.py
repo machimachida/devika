@@ -198,12 +198,12 @@ class Agent:
         self.agent_state.set_agent_active(project_name, True)
 
         conversation = self.project_manager.get_all_messages_formatted(project_name)
-        code_markdown = ReadCode(project_name).code_set_to_markdown()
 
         response, action = self.action.execute(conversation, project_name)
 
         self.project_manager.add_message_from_devika(project_name, response)
 
+        code_markdown = ReadCode(project_name).code_set_to_markdown()  # TODO: 選別してからmarkdownに変換する
         print("\naction :: ", action, '\n')
 
         if action == "answer":
