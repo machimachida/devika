@@ -9,14 +9,14 @@ from src.logger import Logger
 from src.services.utils import retry_wrapper
 
 
-class SimilarityFinder:
+class ReferenceCodeFinder:
     def __init__(self, base_model: str):
         config = Config()
         self.project_dir = config.get_projects_dir()
         self.logger = Logger()
         self.llm = LLM(model_id=base_model)
         parent = Path(__file__).resolve().parent
-        with open(parent.joinpath("similarity.jinja2"), 'r') as file:
+        with open(parent.joinpath("reference.jinja2"), 'r') as file:
             self.prompt_template = file.read().strip()
 
     def render(self, instruction: str, classes: list[str], methods: list[str]) -> str:

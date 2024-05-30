@@ -1,11 +1,11 @@
 import pytest
-from src.agents.coder.similarity_finder import SimilarityFinder
+from src.agents.coder.reference_code_finder import ReferenceCodeFinder
 import src.config
 from src.filesystem import ReadCode
 import src.logger
 
 
-class TestSimilarityFinder:
+class TestReferenceCodeFinder:
     @pytest.mark.parametrize(
         [
             "instruction",
@@ -86,6 +86,6 @@ class TestSimilarityFinder:
             method_names
         ))
 
-        similarity_finder = SimilarityFinder(base_model="AZURE GPT")
-        result = similarity_finder.execute(instruction, "Project Name")
+        finder = ReferenceCodeFinder(base_model="AZURE GPT")
+        result = finder.execute(instruction, "Project Name")
         print(result)
