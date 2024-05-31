@@ -1,7 +1,7 @@
 from .planner import Planner
 from .researcher import Researcher
 from .formatter import Formatter
-from .coder import Coder
+from .coder import Coder, ReferenceCodeFinder
 from .action import Action
 from .internal_monologue import InternalMonologue
 from .answer import Answer
@@ -62,6 +62,7 @@ class Agent:
         self.patcher = Patcher(base_model=base_model)
         self.reporter = Reporter(base_model=base_model)
         self.decision = Decision(base_model=base_model)
+        self.finder = ReferenceCodeFinder(base_model=base_model)
         self.git = None
 
         self.project_manager = ProjectManager()
@@ -203,7 +204,10 @@ class Agent:
 
         self.project_manager.add_message_from_devika(project_name, response)
 
-        code_markdown = ReadCode(project_name).code_set_to_markdown()  # TODO: 選別してからmarkdownに変換する
+        finder_prompt = f"prompt: {prompt}\n\nconversation: {conversation}"
+        class_names, method_names = self.finder.execute(finder_prompt, project_name)
+        code_markdown = ReadCode(project_name).set_classes_to_markdown(class_names)
+        code_markdown += ReadCode(project_name).set_methods_to_markdown(method_names)
         print("\naction :: ", action, '\n')
 
         if action == "answer":
@@ -382,8 +386,14 @@ class Agent:
         else:
             search_results = {}
 
+        class_names, method_names = self.finder.execute(prompt, project_name)
+        code_markdown = ReadCode(project_name).set_classes_to_markdown(class_names)
+        code_markdown += ReadCode(project_name).set_methods_to_markdown(method_names)
+
         code = self.coder.execute(
-            step_by_step_plan=plan,
+            # step_by_step_plan=plan,  # TODO: planの処遇を考える
+            step_by_step_plan=prompt,
+            code_markdown=code_markdown,
             user_context=ask_user_prompt,
             search_results=search_results,
             project_name=project_name

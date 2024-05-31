@@ -25,7 +25,7 @@ class Coder:
             self.prompt_template = file.read().strip()
 
     def render(
-        self, step_by_step_plan: str, user_context: str, search_results: dict
+        self, step_by_step_plan: str, user_context: str, search_results: dict, prompt: str
     ) -> str:
         env = Environment(loader=BaseLoader())
         template = env.from_string(self.prompt_template)
@@ -33,6 +33,7 @@ class Coder:
             step_by_step_plan=step_by_step_plan,
             user_context=user_context,
             search_results=search_results,
+            prompt=prompt,
         )
 
     def validate_response(self, response: str) -> Union[List[Dict[str, str]], bool]:
@@ -123,9 +124,10 @@ class Coder:
         step_by_step_plan: str,
         user_context: str,
         search_results: dict,
-        project_name: str
+        project_name: str,
+        code_markdown: str,
     ) -> Union[List[Dict[str, str]], bool]:
-        prompt = self.render(step_by_step_plan, user_context, search_results)
+        prompt = self.render(step_by_step_plan, user_context, search_results, code_markdown)
         response = self.llm.inference(prompt, project_name)
         
         valid_response = self.validate_response(response)

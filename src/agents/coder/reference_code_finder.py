@@ -55,11 +55,29 @@ class ReferenceCodeFinder:
             return [], []
 
     @retry_wrapper
-    def execute(self, instruction: str, project_name: str) -> tuple[list[str], list[str]]:
+    def execute(self, instruction: str, project_name: str) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
         classes, methods = ReadCode(project_name).get_class_method_names()
         class_names: list[str] = list(classes.keys())
         method_names: list[str] = list(methods.keys())
         prompt = self.render(instruction=instruction, classes=class_names, methods=method_names)
         response = self.llm.inference(prompt, project_name)
 
-        return self.validate_response(response)
+        extracted_class_names, extracted_method_names = self.validate_response(response)
+
+        # classesから抽出されたものだけを返却する。キーをfile_name、値をclass_nameとするため、classesのキーと値を入れ替える
+        extracted_classes: dict[str, list[str]] = {}
+        for class_name in extracted_class_names:
+            file_path = classes[class_name]
+            if file_path not in extracted_classes:
+                extracted_classes[file_path] = []
+            extracted_classes[file_path].append(class_name)
+
+        # methodsから抽出されたものだけを返却する。キーをfile_name、値をmethod_nameとするため、methodsのキーと値を入れ替える
+        extracted_methods: dict[str, list[str]] = {}
+        for method_name in extracted_method_names:
+            file_path = methods[method_name]
+            if file_path not in extracted_methods:
+                extracted_methods[file_path] = []
+            extracted_methods[file_path].append(method_name)
+
+        return extracted_classes, extracted_methods

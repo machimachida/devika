@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from src.config import Config
 from src.filesystem.codeextractor.extractor import Extractor
@@ -13,6 +14,7 @@ class ReadCode:
         config = Config()
         project_path = config.get_projects_dir()
         self.directory_path = os.path.join(project_path, project_name.lower().replace(" ", "-"))
+        self.extractor = Extractor('java')
 
     def read_directory(self):
         files_list = []
@@ -37,23 +39,53 @@ class ReadCode:
         return markdown
 
     def get_class_method_names(self) -> tuple[dict[str, str], dict[str, str]]:
-        class_dict: dict[str, str] = {}
-        method_dict: dict[str, str] = {}
+        classes: dict[str, str] = {}
+        methods: dict[str, str] = {}
 
-        extractor = Extractor('java')
         for root, _dirs, files in os.walk(self.directory_path):
             for file in files:
                 try:
                     file_path = os.path.join(root, file)
                     with open(file_path, 'r', encoding='utf-8') as file_content:
                         content = file_content.read()
-                        class_names, method_names = extractor.extract_class_method_names(content)
+                        class_names, method_names = self.extractor.extract_class_method_names(content)
                         for class_name in class_names:
-                            class_dict[class_name] = file_path
+                            classes[class_name] = file_path
                         for method_name in method_names:
-                            method_dict[method_name] = file_path
+                            methods[method_name] = file_path
                 except Exception as e:
                     print(e)
                     pass
 
-        return class_dict, method_dict
+        return classes, methods
+
+    def set_classes_to_markdown(self, classes: dict[str, list[str]]) -> str:
+        markdown = ""
+        for file_path in classes.keys():
+            with open(file_path, 'r', encoding='utf-8') as file_content:
+                content = file_content.read()
+
+                path_from_app_root_directory = Path(file_path)
+                directory_path = Path(self.directory_path)
+                project_path = path_from_app_root_directory.relative_to(directory_path)
+
+                markdown += f"### {project_path}:\n\n"
+                markdown += f"```\n{content}\n```\n\n"
+                markdown += "---\n\n"
+        return markdown
+
+    def set_methods_to_markdown(self, methods: dict[str, list[str]]) -> str:
+        markdown = ""
+        for file_path, method_names in methods.items():
+            with open(file_path, 'r', encoding='utf-8') as file_content:
+                content = file_content.read()
+                extracted = self.extractor.extract_methods(content, method_names)
+
+                path_from_app_root_directory = Path(file_path)
+                directory_path = Path(self.directory_path)
+                project_path = path_from_app_root_directory.relative_to(directory_path)
+
+                markdown += f"### {project_path}:\n\n"
+                markdown += f"```\n{extracted}\n```\n\n"
+                markdown += "---\n\n"
+        return markdown

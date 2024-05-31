@@ -1,29 +1,13 @@
-Project Step-by-step Plan:
+Project Instruction:
 ```
 {{ step_by_step_plan }}
 ```
 
-Context From User:
-```
-{{ user_context }}
-```
+Please refer these code snippets to complete the task:
 
-Context From Knowledge Base:
+{{ code_markdown }}
 
-{% if not knowledge_base_context %}
-No context found.
-{% else %}
-{% for query, result in search_results.items() %}
-Query: {{ query }}
-Result:
-```
-{{ result }}
-```
----
-{% endfor %}
-{% endif %}
-
-Read the step-by-step plan carefully. Think step-by-step. Learn relevant information from the knowledge base context. Then write the code to implement the step-by-step plan.
+Read the instruction carefully.
 
 Your response should only be in the following Markdown format:
 
