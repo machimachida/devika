@@ -19,8 +19,7 @@ class NameListener(JavaParserListener):
         """
         self.current_package_name: str = ''
         self.current_class_name: str = ''
-        self.is_found_method_in_class: bool = False
-        self.class_names_have_no_method: list[str] = []
+        self.class_names: list[str] = []
         self.method_names: list[str] = []
 
     def get_class_method_names(self) -> tuple[list[str], list[str]]:
@@ -31,7 +30,7 @@ class NameListener(JavaParserListener):
         - class_names_have_no_method (list[str]): A list of class names that have no methods. The format is 'package_name.class_name'.
         - method_names (list[str]): A list of method names. The format is 'package_name.class_name#method_name'.
         """
-        return self.class_names_have_no_method, self.method_names
+        return self.class_names, self.method_names
 
     def enterPackageDeclaration(self, ctx: JavaParser.PackageDeclarationContext):
         """
@@ -50,17 +49,7 @@ class NameListener(JavaParserListener):
         - ctx (JavaParser.ClassDeclarationContext): The context of the class declaration.
         """
         self.current_class_name = self.current_package_name + '.' + ctx.getChild(1).getText()
-        self.is_found_method_in_class = False
-
-    def exitClassDeclaration(self, ctx: JavaParser.ClassDeclarationContext):
-        """
-        Called when exiting a class declaration.
-
-        Args:
-        - ctx (JavaParser.ClassDeclarationContext): The context of the class declaration.
-        """
-        if not self.is_found_method_in_class:
-            self.class_names_have_no_method.append(self.current_class_name)
+        self.class_names.append(self.current_class_name)
 
     def enterMethodDeclaration(self, ctx: JavaParser.MethodDeclarationContext):
         """
@@ -71,4 +60,3 @@ class NameListener(JavaParserListener):
         """
         method_name = ctx.getChild(1).getText()
         self.method_names.append(self.current_class_name + '#' + method_name)
-        self.is_found_method_in_class = True

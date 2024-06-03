@@ -3,6 +3,7 @@ from unittest.mock import mock_open
 from .read_code import ReadCode
 
 from src.config import Config
+import os
 
 
 class TestReadCode:
@@ -151,3 +152,31 @@ public class TestClass4 {
         rc = ReadCode("minimum")
         result = rc.get_class_method_names()
         print(result)
+
+    def test_display_tree_structure(self, mocker):
+        mocker.patch.object(Config, '__new__', return_value=Config)
+        mocker.patch.object(Config, 'get_projects_dir', return_value=str(Path('./data/projects')))
+        rc = ReadCode("minimum4")
+        p = Path('data/projects/minimum4/src')
+        display_tree_structure(str(p))
+        # p = Path('data/projects/minimum4')
+        # print(p)
+
+
+def display_tree_structure(root_dir, indent=""):
+    # Get all items in the directory
+    items = os.listdir(root_dir)
+    # Loop through each item
+    for i, item in enumerate(items):
+        # Print the current item with indentation
+        print(indent + "└── " + item)
+        # Check if the item is a directory
+        item_path = os.path.join(root_dir, item)
+        if os.path.isdir(item_path):
+            # If it's the last item, adjust the indentation for child items
+            if i == len(items) - 1:
+                new_indent = indent + "    "
+            else:
+                new_indent = indent + "│   "
+            # Recurse into the directory
+            display_tree_structure(item_path, new_indent)

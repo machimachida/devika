@@ -89,3 +89,29 @@ class ReadCode:
                 markdown += f"```\n{extracted}\n```\n\n"
                 markdown += "---\n\n"
         return markdown
+
+    def get_project_directory_tree(self) -> str:
+        """
+        TODO: 仮実装なのでsrcディレクトリのみを取得する
+        """
+
+        src_path = Path(self.directory_path) / "src"
+        return get_tree_structure(str(src_path))
+
+
+def get_tree_structure(target_path: str, indent: str = "") -> str:
+    result = ""
+    items = os.listdir(target_path)
+    for i, item in enumerate(items):
+        result += "└── " + item + "\n"
+        item_path = os.path.join(target_path, item)
+        if os.path.isdir(item_path):
+            # If it's the last item, adjust the indentation for child items
+            if i == len(items) - 1:
+                new_indent = indent + "    "
+            else:
+                new_indent = indent + "│   "
+            # Recurse into the directory
+            result += get_tree_structure(item_path, new_indent)
+
+    return result
