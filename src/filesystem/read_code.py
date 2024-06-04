@@ -96,14 +96,16 @@ class ReadCode:
         """
 
         src_path = Path(self.directory_path) / "src"
-        return get_tree_structure(str(src_path))
+        tree_str = "src\n"
+        tree_str += get_tree_structure(str(src_path))
+        return tree_str
 
 
 def get_tree_structure(target_path: str, indent: str = "") -> str:
-    result = ""
+    tree_str = ""
     items = os.listdir(target_path)
     for i, item in enumerate(items):
-        result += "└── " + item + "\n"
+        tree_str += indent + "└── " + item + "\n"
         item_path = os.path.join(target_path, item)
         if os.path.isdir(item_path):
             # If it's the last item, adjust the indentation for child items
@@ -112,6 +114,6 @@ def get_tree_structure(target_path: str, indent: str = "") -> str:
             else:
                 new_indent = indent + "│   "
             # Recurse into the directory
-            result += get_tree_structure(item_path, new_indent)
+            tree_str += get_tree_structure(item_path, new_indent)
 
-    return result
+    return tree_str

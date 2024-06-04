@@ -11,9 +11,6 @@ class TestReadCode:
         mocker.patch.object(Config, '__new__', return_value=Config)
         mocker.patch.object(Config, 'get_projects_dir', return_value='/fakepath/project-name')
 
-        # Mock os.path.join to return a path (adjust the logic as needed)
-        mocker.patch('os.path.join', return_value='/fakepath/project-name')
-
         # Mock os.walk to simulate an empty directory
         mocker.patch('os.walk', return_value=[])
 
@@ -137,6 +134,9 @@ public class TestClass4 {
         classes, methods = rc.get_class_method_names()
 
         assert classes == {
+            'com.example.TestClass1': '/fakepath/project-name/src/java/com/example/file1.java',
+            'com.example.lib.TestClass2': '/fakepath/project-name/src/java/com/example/lib/file2.java',
+            'com.example.lib.TestClass3': '/fakepath/project-name/src/java/com/example/lib/file3.java',
             'com.example.TestClass4': '/fakepath/project-name/src/java/com/example/file4.java',
         }
         assert methods == {
@@ -146,37 +146,24 @@ public class TestClass4 {
             'com.example.lib.TestClass3#testMethod4': '/fakepath/project-name/src/java/com/example/lib/file3.java',
         }
 
+    def test_display_tree_structure(self, mocker):
+        mocker.patch.object(Config, '__new__', return_value=Config)
+        mocker.patch.object(Config, 'get_projects_dir', return_value='/fakepath/project-name')
+        mocker.patch('os.listdir', side_effect=[['dir', 'file.txt'], ['child_file.txt']])
+        mocker.patch('os.path.join', side_effect=lambda *args: '/'.join(args))
+        mocker.patch('os.path.isdir', side_effect=[True, False, False])
+
+        rc = ReadCode("Project Name")
+        result = rc.get_project_directory_tree()
+        assert result == """src
+└── dir
+│   └── child_file.txt
+└── file.txt
+"""
+
     def test_get_class_method_names_with_actual_files(self, mocker):
         mocker.patch.object(Config, '__new__', return_value=Config)
         mocker.patch.object(Config, 'get_projects_dir', return_value=str(Path('./data/projects')))
         rc = ReadCode("minimum")
         result = rc.get_class_method_names()
         print(result)
-
-    def test_display_tree_structure(self, mocker):
-        mocker.patch.object(Config, '__new__', return_value=Config)
-        mocker.patch.object(Config, 'get_projects_dir', return_value=str(Path('./data/projects')))
-        rc = ReadCode("minimum4")
-        p = Path('data/projects/minimum4/src')
-        display_tree_structure(str(p))
-        # p = Path('data/projects/minimum4')
-        # print(p)
-
-
-def display_tree_structure(root_dir, indent=""):
-    # Get all items in the directory
-    items = os.listdir(root_dir)
-    # Loop through each item
-    for i, item in enumerate(items):
-        # Print the current item with indentation
-        print(indent + "└── " + item)
-        # Check if the item is a directory
-        item_path = os.path.join(root_dir, item)
-        if os.path.isdir(item_path):
-            # If it's the last item, adjust the indentation for child items
-            if i == len(items) - 1:
-                new_indent = indent + "    "
-            else:
-                new_indent = indent + "│   "
-            # Recurse into the directory
-            display_tree_structure(item_path, new_indent)
