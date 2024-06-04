@@ -27,6 +27,7 @@ class Patcher:
         self,
         conversation: list,
         code_markdown: str,
+        directory_structure: str,
         commands: list,
         error: str,
         system_os: str
@@ -36,6 +37,7 @@ class Patcher:
         return template.render(
             conversation=conversation,
             code_markdown=code_markdown,
+            directory_structure=directory_structure,
             commands=commands,
             error=error,
             system_os=system_os
@@ -121,6 +123,7 @@ class Patcher:
         self,
         conversation: list[str],
         code_markdown: str,
+        directory_structure: str,
         commands: list,
         error: str,
         system_os: str,
@@ -129,6 +132,7 @@ class Patcher:
         prompt = self.render(
             conversation,
             code_markdown,
+            directory_structure,
             commands,
             error,
             system_os

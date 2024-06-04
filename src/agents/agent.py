@@ -206,8 +206,12 @@ class Agent:
 
         finder_prompt = f"prompt: {prompt}\n\nconversation: {conversation}"
         class_names, method_names = self.finder.execute(finder_prompt, project_name)
-        code_markdown = ReadCode(project_name).set_classes_to_markdown(class_names)
-        code_markdown += ReadCode(project_name).set_methods_to_markdown(method_names)
+
+        read_code = ReadCode(project_name)
+        code_markdown = read_code.set_classes_to_markdown(class_names)
+        code_markdown += read_code.set_methods_to_markdown(method_names)
+        directory_structure = read_code.get_project_directory_tree()
+
         print("\naction :: ", action, '\n')
 
         if action == "answer":
@@ -244,6 +248,7 @@ class Agent:
             code = self.feature.execute(
                 conversation=conversation,
                 code_markdown=code_markdown,
+                directory_structure=directory_structure,
                 system_os=os_system,
                 project_name=project_name
             )
@@ -254,6 +259,7 @@ class Agent:
             code = self.patcher.execute(
                 conversation=conversation,
                 code_markdown=code_markdown,
+                directory_structure=directory_structure,
                 commands=None,
                 error=prompt,
                 system_os=os_system,
@@ -387,8 +393,10 @@ class Agent:
             search_results = {}
 
         class_names, method_names = self.finder.execute(prompt, project_name)
-        code_markdown = ReadCode(project_name).set_classes_to_markdown(class_names)
-        code_markdown += ReadCode(project_name).set_methods_to_markdown(method_names)
+        read_code = ReadCode(project_name)
+        code_markdown = read_code.set_classes_to_markdown(class_names)
+        code_markdown += read_code.set_methods_to_markdown(method_names)
+        directory_structure = read_code.get_project_directory_tree()
 
         code = self.coder.execute(
             # step_by_step_plan=plan,  # TODO: planの処遇を考える
@@ -396,7 +404,8 @@ class Agent:
             code_markdown=code_markdown,
             user_context=ask_user_prompt,
             search_results=search_results,
-            project_name=project_name
+            project_name=project_name,
+            directory_structure=directory_structure,
         )
         print("\ncode :: ", code, '\n')
 

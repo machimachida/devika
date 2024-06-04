@@ -27,6 +27,7 @@ class Feature:
         self,
         conversation: list,
         code_markdown: str,
+        directory_structure: str,
         system_os: str
     ) -> str:
         env = Environment(loader=BaseLoader())
@@ -34,6 +35,7 @@ class Feature:
         return template.render(
             conversation=conversation,
             code_markdown=code_markdown,
+            directory_structure=directory_structure,
             system_os=system_os
         )
 
@@ -117,10 +119,11 @@ class Feature:
         self,
         conversation: list,
         code_markdown: str,
+        directory_structure: str,
         system_os: str,
         project_name: str
     ) -> Union[List[Dict[str, str]], bool]:
-        prompt = self.render(conversation, code_markdown, system_os)
+        prompt = self.render(conversation, code_markdown, directory_structure, system_os)
         response = self.llm.inference(prompt, project_name)
         
         valid_response = self.validate_response(response)
