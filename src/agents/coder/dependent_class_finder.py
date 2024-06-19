@@ -7,7 +7,6 @@ from src.config import Config
 from src.llm import LLM
 from src.logger import Logger
 from src.services.utils import retry_wrapper
-from src.socket_instance import EmitAgent
 
 
 class DependentClassFinder:
