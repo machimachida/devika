@@ -163,7 +163,7 @@ public class TestClass4 {
 
     def test_get_class_method_names_with_actual_files(self, mocker):
         mocker.patch.object(Config, '__new__', return_value=Config)
-        mocker.patch.object(Config, 'get_projects_dir', return_value=str(Path('./data/projects')))
+        mocker.patch.object(Config, 'get_projects_dir', return_value=str(Path('data/projects')))
         rc = ReadCode("minimum")
         result = rc.get_class_method_names()
         print(result)

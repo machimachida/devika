@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="TestDependentClassFinderWithActualLLM" type="tests" factoryName="Autodetect">
+  <configuration default="false" name="Python tests for filesystem.test_read_code.TestReadCode.test_get_class_method_names_with_actual_files" type="tests" factoryName="Autodetect" nameIsGenerated="true">
     <module name="devika" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
@@ -11,7 +11,7 @@
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="_new_additionalArguments" value="&quot;&quot;" />
-    <option name="_new_target" value="&quot;src.agents.coder.test_dependent_class_finder.TestDependentClassFinder.test_execute_with_actual_llm&quot;" />
+    <option name="_new_target" value="&quot;src.filesystem.test_read_code.TestReadCode.test_get_class_method_names_with_actual_files&quot;" />
     <option name="_new_targetType" value="&quot;PYTHON&quot;" />
     <method v="2" />
   </configuration>

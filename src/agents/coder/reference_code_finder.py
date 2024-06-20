@@ -57,27 +57,43 @@ class ReferenceCodeFinder:
     @retry_wrapper
     def execute(self, instruction: str, project_name: str) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
         classes, methods = ReadCode(project_name).get_class_method_names()
-        class_names: list[str] = list(classes.keys())
-        method_names: list[str] = list(methods.keys())
-        prompt = self.render(instruction=instruction, classes=class_names, methods=method_names)
+        prompt = self.render(
+            instruction=instruction,
+            classes=list(classes.keys()),
+            methods=list(methods.keys())
+        )
         response = self.llm.inference(prompt, project_name)
 
         extracted_class_names, extracted_method_names = self.validate_response(response)
+        return (
+            self.extract_file_paths_and_names(extracted_class_names, classes),
+            self.extract_file_paths_and_names(extracted_method_names, methods)
+        )
 
-        # classesから抽出されたものだけを返却する。キーをfile_name、値をclass_nameとするため、classesのキーと値を入れ替える
-        extracted_classes: dict[str, list[str]] = {}
-        for class_name in extracted_class_names:
-            file_path = classes[class_name]
-            if file_path not in extracted_classes:
-                extracted_classes[file_path] = []
-            extracted_classes[file_path].append(class_name)
+    @staticmethod
+    def extract_file_paths_and_names(
+            names_to_extract: list[str], name_to_path_mapping: dict[str, str]
+    ) -> dict[str, list[str]]:
+        """
+        This static method is used to extract file paths and names from a given list
+        of names and a mapping of names to paths.
 
-        # methodsから抽出されたものだけを返却する。キーをfile_name、値をmethod_nameとするため、methodsのキーと値を入れ替える
-        extracted_methods: dict[str, list[str]] = {}
-        for method_name in extracted_method_names:
-            file_path = methods[method_name]
-            if file_path not in extracted_methods:
-                extracted_methods[file_path] = []
-            extracted_methods[file_path].append(method_name)
+        Parameters:
+        names_to_extract (list[str]): A list of names that need to be extracted.
+        name_to_path_mapping (dict[str, str]): A dictionary mapping names to file paths.
 
-        return extracted_classes, extracted_methods
+        Returns:
+        dict[str, list[str]]: A dictionary where the keys are the file paths and
+        the values are lists of names that were found in the corresponding file path.
+
+        """
+        extracted_file_paths: dict[str, list[str]] = {}
+        for name in names_to_extract:
+            file_path = name_to_path_mapping.get(name)
+            # LLMがクラスやメソッドの名前を間違えて返すケースがあり、存在しないキーアクセスがありうるので、その場合は無視する
+            if file_path is None:
+                continue
+            if file_path not in extracted_file_paths:
+                extracted_file_paths[file_path] = []
+            extracted_file_paths[file_path].append(name)
+        return extracted_file_paths
